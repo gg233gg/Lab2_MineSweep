@@ -1,13 +1,16 @@
 import java.util.Random;
-import java.util.Scanner;
+
 public class Mine {
 
-    //-1代表地雷，0-8代表周围地雷数量，-2作为下标越界的返回值
+    /**
+     * -1代表地雷，0-8代表周围地雷数量，-2作为下标越界的返回值
+     */
     private int[][] field;
-    private boolean[][] show;
+    private boolean[][] isShow;
     private final int row, col;
     private final int mines;
-    private int mines_found;
+    private int minesFound;
+    private int blocksLeft;
     private static final int MAX_SIZE = 30;
 
     Mine() {
@@ -17,24 +20,27 @@ public class Mine {
     }
 
     Mine(int vrow, int vcol, int vmines) throws Exception {
-        if (vmines > vrow * vcol || vrow > MAX_SIZE || vcol > MAX_SIZE) throw new Exception();
+        if (vmines > vrow * vcol || vrow > MAX_SIZE || vcol > MAX_SIZE || vmines < 0) throw new Exception();
         row = vrow;
         col = vcol;
         mines = vmines;
+        blocksLeft = row * col - mines;
         field = new int[row][col];
-        show = new boolean[row][col];
+        isShow = new boolean[row][col];
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
-                show[i][j] = false;
+                isShow[i][j] = false;
             }
         }
         placeMines();
         placeNum();
     }
 
-    //随机放地雷
-    private void placeMines() {
-        /*建立一个大小为row*col的数组，其中填满从0-row*col的数字，之后使用Fisher-Yates算法打乱，
+    /**
+     * 随机放地雷
+     */
+    public void placeMines() {
+        /*col的数组，其中填满从0-row*col的数字，之后使用Fisher-Yates算法打乱，
         取出mines个数字作为地雷坐标，其坐标为(num/row,num%row)                         */
         int size = row * col;
         int[] arr = new int[size];
@@ -46,21 +52,25 @@ public class Mine {
             int temp = arr[index];
             arr[index] = arr[i];
             arr[i] = temp;
-            setField(arr[i] / col, arr[i] % col, -1);
+            field[arr[i] / col][arr[i] % col] = -1;
         }
     }
 
-    //根据地雷设置数字
-    private void placeNum() {
+    /**
+     * 根据地雷设置数字
+     */
+    public void placeNum() {
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
-                if (readField(i, j) != -1) setField(i, j, countMines(i, j));
+                if (readField(i, j) != -1) field[i][j] = countMines(i, j);
             }
         }
     }
 
-    //数周围八个格子的地雷数量
-    private int countMines(int x, int y) {
+    /**
+     * 数周围八个格子的地雷数量
+     */
+    public int countMines(int x, int y) {
         int count = 0;
         if (readField(x - 1, y - 1) == -1) count++;
         if (readField(x - 1, y + 1) == -1) count++;
@@ -74,21 +84,41 @@ public class Mine {
     }
 
 
-    public void printField() {
+    /**面向玩家打印有遮掩的雷区*/
+    public void printGame() {
+        System.out.print("\t");
+        for(int i=0;i<col;i++)
+            System.out.print(i+"\t");
+        System.out.print("\n");
         for (int i = 0; i < row; i++) {
+            System.out.print(i+"\t");
             for (int j = 0; j < col; j++) {
-                if (isShow(i, j)) System.out.print(readField(i, j) + "  ");
-                else System.out.print("■  ");
+                if (isShow[i][j]) System.out.print(readField(i, j) + "\t");
+                else System.out.print("■\t");
             }
             System.out.print("\n");
         }
     }
 
-    public void setField(int x, int y, int status) {
-        field[x][y] = status;
+    /**打印完全展示的雷区*/
+    public void printField() {
+        System.out.print("\t");
+        for(int i=0;i<col;i++)
+            System.out.print(i+"\t");
+        System.out.print("\n");
+        for (int i = 0; i < row; i++) {
+            System.out.print(i+"\t");
+            for (int j = 0; j < col; j++) {
+                if (readField(i, j) == -1) System.out.print("*\t");
+                else System.out.print(readField(i, j) + "\t");
+            }
+            System.out.print("\n");
+        }
     }
 
-    //读取某个位置的数值，并进行边界判断
+    /**
+     * 读取某个位置的数值，并进行边界判断
+     */
     public int readField(int x, int y) {
         if (x < 0 || y < 0 || x > row - 1 || y > col - 1)
             return -2;
@@ -97,31 +127,27 @@ public class Mine {
     }
 
     public boolean isMine(int x, int y) {
-        if (readField(x, y) == -1) return true;
-        else return false;
+        return readField(x, y) == -1;
     }
 
-    public boolean isShow(int x, int y) {
-        return show[x][y];
-    }
-
-    public void flip(int x, int y) {
-        show[x][y] = !show[x][y];
-    }
-
-    public boolean digMine(int x, int y) {
-        if (isMine(x, y)) return true;
+    /**若挖到雷，返回false*/
+    public boolean digMine(int x, int y) throws Exception {
+        if (x >= row || y >= col || x < 0 || y < 0 || isShow[x][y]) throw new Exception();
+        if (isMine(x, y)) return false;
         else {
             expand(x, y);
-            return false;
+            return true;
         }
     }
 
-    //揭开当前的格点空白展开，在此之前不要先将隐藏的格点揭开
+    /**
+     * 揭开当前的格点空白展开，在此之前不要先将隐藏的格点揭开
+     */
     public void expand(int x, int y) {
-        if (isMine(x, y) || readField(x, y) == -2 || isShow(x,y)) return;
-        else{
-            flip(x,y);
+        if (isMine(x, y) || readField(x, y) == -2 || isShow[x][y]) return;
+        else {
+            isShow[x][y] = true;
+            blocksLeft--;
             int count = countMines(x, y);
             if (count == 0) {
                 for (int i = x - 1; i <= x + 1; i++) {
@@ -131,6 +157,10 @@ public class Mine {
                 }
             }
         }
+    }
+
+    public int blocksLeft() {
+        return blocksLeft;
     }
 
 }
