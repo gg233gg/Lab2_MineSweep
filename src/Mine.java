@@ -11,6 +11,7 @@ public class Mine {
     private final int mines;
     private int minesFound;
     private int blocksLeft;
+    private int flags;
     private static final int MAX_SIZE = 30;
 
     Mine() {
@@ -20,10 +21,11 @@ public class Mine {
     }
 
     Mine(int vrow, int vcol, int vmines) throws Exception {
-        if (vmines > vrow * vcol || vrow > MAX_SIZE || vcol > MAX_SIZE || vmines < 0) throw new Exception();
+        if (vmines >= vrow * vcol || vrow > MAX_SIZE || vcol > MAX_SIZE || vmines < 0) throw new Exception();
         row = vrow;
         col = vcol;
         mines = vmines;
+        flags = 0;
         blocksLeft = row * col - mines;
         field = new int[row][col];
         isShow = new boolean[row][col];
@@ -62,7 +64,7 @@ public class Mine {
     public void placeNum() {
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
-                if (readField(i, j) != -1) field[i][j] = countMines(i, j);
+                if (!isMine(i, j)) field[i][j] = countMines(i, j);
             }
         }
     }
@@ -84,32 +86,38 @@ public class Mine {
     }
 
 
-    /**面向玩家打印有遮掩的雷区*/
+    /**
+     * 面向玩家打印有遮掩的雷区
+     */
     public void printGame() {
         System.out.print("\t");
-        for(int i=0;i<col;i++)
-            System.out.print(i+"\t");
+        for (int i = 0; i < col; i++)
+            System.out.print(i + "\t");
         System.out.print("\n");
         for (int i = 0; i < row; i++) {
-            System.out.print(i+"\t");
+            System.out.print(i + "\t");
             for (int j = 0; j < col; j++) {
                 if (isShow[i][j]) System.out.print(readField(i, j) + "\t");
+                else if (isFlag(i, j)) System.out.print("▲   ");
                 else System.out.print("■\t");
             }
             System.out.print("\n");
         }
+        System.out.println("Flags:" + flags + "    " + "Minesfound" + minesFound);
     }
 
-    /**打印完全展示的雷区*/
+    /**
+     * 打印完全展示的雷区
+     */
     public void printField() {
         System.out.print("\t");
-        for(int i=0;i<col;i++)
-            System.out.print(i+"\t");
+        for (int i = 0; i < col; i++)
+            System.out.print(i + "\t");
         System.out.print("\n");
         for (int i = 0; i < row; i++) {
-            System.out.print(i+"\t");
+            System.out.print(i + "\t");
             for (int j = 0; j < col; j++) {
-                if (readField(i, j) == -1) System.out.print("*\t");
+                if (isMine(i, j)) System.out.print("*\t");
                 else System.out.print(readField(i, j) + "\t");
             }
             System.out.print("\n");
@@ -130,9 +138,11 @@ public class Mine {
         return readField(x, y) == -1;
     }
 
-    /**若挖到雷，返回false*/
+    /**
+     * 若挖到雷，返回false
+     */
     public boolean digMine(int x, int y) throws Exception {
-        if (x >= row || y >= col || x < 0 || y < 0 || isShow[x][y]) throw new Exception();
+        if (x >= row || y >= col || x < 0 || y < 0 || isShow[x][y] || isFlag(x, y)) throw new Exception();
         if (isMine(x, y)) return false;
         else {
             expand(x, y);
@@ -140,11 +150,31 @@ public class Mine {
         }
     }
 
+    public void flagMine(int x, int y) throws Exception {
+        if (x >= row || y >= col || x < 0 || y < 0 || isShow[x][y] || (flags >= mines && !isFlag(x, y)))
+            throw new Exception();
+        else if (isFlag(x, y)) {
+            field[x][y] -= 10;
+            flags--;
+            if (isMine(x, y)) {
+                minesFound--;
+            }
+        } else if (!isFlag(x, y)) {
+            if (isMine(x, y)) {
+                minesFound++;
+            }
+            field[x][y] += 10;
+            flags++;
+        }
+
+
+    }
+
     /**
      * 揭开当前的格点空白展开，在此之前不要先将隐藏的格点揭开
      */
     public void expand(int x, int y) {
-        if (isMine(x, y) || readField(x, y) == -2 || isShow[x][y]) return;
+        if (isMine(x, y) || readField(x, y) == -2 || isShow[x][y] || isFlag(x, y)) return;
         else {
             isShow[x][y] = true;
             blocksLeft--;
@@ -159,8 +189,27 @@ public class Mine {
         }
     }
 
-    public int blocksLeft() {
+    public int getBlocksLeft() {
         return blocksLeft;
+    }
+
+    /**
+     * 获取长宽雷数三个基本信息
+     */
+    public int[] getBasic() {
+        return new int[]{row, col, mines};
+    }
+
+    public int getMinesFound() {
+        return minesFound;
+    }
+
+    public int getMines() {
+        return mines;
+    }
+
+    public boolean isFlag(int x, int y) {
+        return (readField(x, y) > 8);
     }
 
 }
