@@ -104,6 +104,7 @@ public class Mine {
             System.out.print("\n");
         }
         System.out.println("Flags:" + flags + "    " + "Minesfound" + minesFound);
+        System.out.println(this);
     }
 
     /**
@@ -143,7 +144,10 @@ public class Mine {
      */
     public boolean digMine(int x, int y) throws Exception {
         if (x >= row || y >= col || x < 0 || y < 0 || isShow[x][y] || isFlag(x, y)) throw new Exception();
-        if (isMine(x, y)) return false;
+        if (isMine(x, y)) {
+            isShow[x][y] = true;
+            return false;
+        }
         else {
             expand(x, y);
             return true;
@@ -210,6 +214,16 @@ public class Mine {
 
     public boolean isFlag(int x, int y) {
         return (readField(x, y) > 8);
+    }
+
+    public void refresh() {
+        for (int i = 0; i < row; i++) {
+            for (int j = 0; j < col; j++) {
+                field[i][j] = 0;
+            }
+        }
+        placeMines();
+        placeNum();
     }
 
 }

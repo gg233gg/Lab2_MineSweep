@@ -4,28 +4,17 @@ public class Game {
     public static void main(String[] args) {
         Game newgame = new Game();
         Mine mine = new Mine();
+        System.out.println(mine);
         Scanner scanner = new Scanner(System.in);
 
         while (newgame.isRunning) {
 
-
             while (!newgame.isInit) {
                 try {
-                    if(!newgame.isCreate) {
-                        int[] argI = newgame.commandInit(scanner.nextLine());
-                        mine = new Mine(argI[0], argI[1], argI[2]);
-                        mine.printGame();
-                        newgame.isCreate = true;
-                    }
-                    int[] argI = mine.getBasic();
-                    int[] argD = newgame.commandDig(scanner.nextLine());
-                    while(mine.readField(argD[0],argD[1])==-1)
-                        mine = new Mine(argI[0], argI[1], argI[2]);
-                    newgame.isSurvive = mine.digMine(argD[0], argD[1]);
+                    int[] argI = newgame.commandInit(scanner.nextLine());
+                    mine = new Mine(argI[0], argI[1], argI[2]);
                     mine.printGame();
-
                     newgame.isInit = true;
-                    //mine.printField();
                 } catch (Exception ex) {
                     System.out.println("invalid input");
                 }
@@ -36,18 +25,30 @@ public class Game {
                 try {
                     if(mine.getBlocksLeft() == 0 || mine.getMinesFound() == mine.getMines()) break;
                     command = scanner.nextLine();
+
                     if (Character.isDigit(command.charAt(0))) {
                         int[] argD = newgame.commandDig(command);
+                        if(newgame.isDugOnce && !mine.isFlag(argD[0],argD[1])) {
+                            while(mine.readField(argD[0],argD[1])==-1) {
+                                mine.refresh();
+                            }
+                            newgame.isDugOnce = false;
+                        }
                         newgame.isSurvive = mine.digMine(argD[0], argD[1]);
                     }
+
                     else if(command.startsWith("f")) {
                         int[] argF = newgame.commandFlag(command);
                         mine.flagMine(argF[0],argF[1]);
                     }
+
                     mine.printGame();
+
                 } catch (Exception ex) {
                     System.out.println("invalid input");
                 }
+
+
             }
 
             if(!newgame.isSurvive) {
@@ -69,11 +70,11 @@ public class Game {
      */
     private boolean isRunning;
     /**
-     * 判断建立雷区的三个参数是否成功读入并且创建成功
+     * 判断雷区是否被挖过一次，用于保证第一次不碰到雷
      */
-    private boolean isCreate;
+    private boolean isDugOnce;
     /**
-     * 判断雷区是否初始化，做到先手不踩雷
+     * 判断建立雷区的三个参数是否成功读入并且创建成功
      */
     private boolean isInit;
     /**
@@ -83,7 +84,7 @@ public class Game {
 
     Game() {
         isRunning = true;
-        isCreate = false;
+        isDugOnce = true;
         isInit = false;
         isSurvive = true;
         System.out.println("欢迎来到扫雷游戏，请输入三个整数");
