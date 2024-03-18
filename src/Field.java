@@ -1,6 +1,6 @@
 import java.util.Random;
 
-public class Mine {
+public class Minefield {
 
     /**
      * -1代表地雷，0-8代表周围地雷数量，-2作为下标越界的返回值
@@ -14,13 +14,13 @@ public class Mine {
     private int flags;
     private static final int MAX_SIZE = 30;
 
-    Mine() {
+    Minefield() {
         row = 0;
         col = 0;
         mines = 0;
     }
 
-    Mine(int vrow, int vcol, int vmines) throws Exception {
+    Minefield(int vrow, int vcol, int vmines) throws Exception {
         if (vmines >= vrow * vcol || vrow > MAX_SIZE || vcol > MAX_SIZE || vmines < 0) throw new Exception();
         row = vrow;
         col = vcol;
@@ -182,8 +182,7 @@ public class Mine {
         else {
             isShow[x][y] = true;
             blocksLeft--;
-            int count = countMines(x, y);
-            if (count == 0) {
+            if (readField(x, y) == 0) {
                 for (int i = x - 1; i <= x + 1; i++) {
                     for (int j = y - 1; j <= y + 1; j++) {
                         expand(i, j);
@@ -191,25 +190,6 @@ public class Mine {
                 }
             }
         }
-    }
-
-    public int getBlocksLeft() {
-        return blocksLeft;
-    }
-
-    /**
-     * 获取长宽雷数三个基本信息
-     */
-    public int[] getBasic() {
-        return new int[]{row, col, mines};
-    }
-
-    public int getMinesFound() {
-        return minesFound;
-    }
-
-    public int getMines() {
-        return mines;
     }
 
     public boolean isFlag(int x, int y) {
@@ -224,6 +204,10 @@ public class Mine {
         }
         placeMines();
         placeNum();
+    }
+
+    public boolean isWin() {
+        return (blocksLeft == 0 || minesFound == mines);
     }
 
 }
