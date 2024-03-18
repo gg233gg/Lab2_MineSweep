@@ -1,6 +1,6 @@
 import java.util.Random;
 
-public class Minefield {
+public class Field {
 
     /**
      * -1代表地雷，0-8代表周围地雷数量，-2作为下标越界的返回值
@@ -12,20 +12,22 @@ public class Minefield {
     private int minesFound;
     private int blocksLeft;
     private int flags;
+    private boolean hasDugOnce;
     private static final int MAX_SIZE = 30;
 
-    Minefield() {
+    Field() {
         row = 0;
         col = 0;
         mines = 0;
     }
 
-    Minefield(int vrow, int vcol, int vmines) throws Exception {
+    Field(int vrow, int vcol, int vmines) throws Exception {
         if (vmines >= vrow * vcol || vrow > MAX_SIZE || vcol > MAX_SIZE || vmines < 0) throw new Exception();
         row = vrow;
         col = vcol;
         mines = vmines;
         flags = 0;
+        hasDugOnce = false;
         blocksLeft = row * col - mines;
         field = new int[row][col];
         isShow = new boolean[row][col];
@@ -41,7 +43,7 @@ public class Minefield {
     /**
      * 随机放地雷
      */
-    public void placeMines() {
+    private void placeMines() {
         /*col的数组，其中填满从0-row*col的数字，之后使用Fisher-Yates算法打乱，
         取出mines个数字作为地雷坐标，其坐标为(num/row,num%row)                         */
         int size = row * col;
@@ -61,7 +63,7 @@ public class Minefield {
     /**
      * 根据地雷设置数字
      */
-    public void placeNum() {
+    private void placeNum() {
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
                 if (!isMine(i, j)) field[i][j] = countMines(i, j);
@@ -72,7 +74,7 @@ public class Minefield {
     /**
      * 数周围八个格子的地雷数量
      */
-    public int countMines(int x, int y) {
+    private int countMines(int x, int y) {
         int count = 0;
         if (readField(x - 1, y - 1) == -1) count++;
         if (readField(x - 1, y + 1) == -1) count++;
@@ -144,6 +146,12 @@ public class Minefield {
      */
     public boolean digMine(int x, int y) throws Exception {
         if (x >= row || y >= col || x < 0 || y < 0 || isShow[x][y] || isFlag(x, y)) throw new Exception();
+        if(!hasDugOnce && !isFlag(x, y)) {
+            while(isMine(x, y)) {
+                refresh();
+            }
+            hasDugOnce = true;
+        }
         if (isMine(x, y)) {
             isShow[x][y] = true;
             return false;
@@ -177,7 +185,7 @@ public class Minefield {
     /**
      * 揭开当前的格点空白展开，在此之前不要先将隐藏的格点揭开
      */
-    public void expand(int x, int y) {
+    private void expand(int x, int y) {
         if (isMine(x, y) || readField(x, y) == -2 || isShow[x][y] || isFlag(x, y)) return;
         else {
             isShow[x][y] = true;
@@ -205,6 +213,7 @@ public class Minefield {
         placeMines();
         placeNum();
     }
+
 
     public boolean isWin() {
         return (blocksLeft == 0 || minesFound == mines);
