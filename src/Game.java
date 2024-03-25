@@ -42,7 +42,7 @@ public class Game {
     }
 
     private int[] commandFlag(String command) {
-        command = command.substring(1,command.length());
+        command = command.substring(1, command.length());
         int[] arg = new int[2];
         String[] num = command.split("\\s");
         for (int i = 0; i < 2; i++)
@@ -50,9 +50,19 @@ public class Game {
         return arg;
     }
 
+    /**
+     * 不打印纯英文的错误信息
+     */
+    private void myPrintError(String str) {
+        if(str.matches("^[a-zA-Z0-9\\s]*"))
+            System.out.println("未知命令");
+        else
+            System.out.println(str);
+    }
+
     public void play() {
         while (isRunning) {
-            System.out.println("欢迎来到扫雷游戏，请输入三个整数");
+            System.out.println("欢迎来到钱玉航设计的扫雷游戏，请输入三个整数");
 
             //进行雷盘的初始化
             while (!isInit) {
@@ -62,42 +72,42 @@ public class Game {
                     minefield.printGame();
                     isInit = true;
                 } catch (Exception ex) {
-                    System.out.println("invalid input");
+                    myPrintError(ex.getMessage());
                 }
             }
 
             //开始游戏
             String command;
-            while(isSurvive){
+            while (isSurvive) {
                 try {
-                    if(minefield.isWin()) break;
+                    if (minefield.isWin()) break;
                     command = scanner.nextLine();
 
                     //挖雷与标记雷
                     if (Character.isDigit(command.charAt(0))) {
                         int[] argD = commandDig(command);
                         isSurvive = minefield.digMine(argD[0], argD[1]);
-                    }
-                    else if(command.startsWith("f")) {
+                    } else if (command.startsWith("f")) {
                         int[] argF = commandFlag(command);
-                        minefield.flagMine(argF[0],argF[1]);
+                        minefield.flagMine(argF[0], argF[1]);
+                    } else {
+                        throw new Exception("未知命令");
                     }
 
                     minefield.printGame();
 
                 } catch (Exception ex) {
-                    System.out.println("invalid input");
+                    myPrintError(ex.getMessage());
                 }
 
 
             }
 
             //游戏结束判断
-            if(!isSurvive) {
-                System.out.println("Fail");
-            }
-            else {
-                System.out.println("Win");
+            if (!isSurvive) {
+                System.out.println("踩中地雷，游戏结束");
+            } else {
+                System.out.println("恭喜你，扫雷完成");
             }
             minefield.printField();
             System.out.println("重新开始请输入'y'");
