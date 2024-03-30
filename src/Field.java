@@ -21,6 +21,7 @@ public class Field {
         mines = 0;
     }
 
+
     Field(int vrow, int vcol, int vmines) throws Exception {
         if (vrow > MAX_SIZE || vcol > MAX_SIZE || vrow < 0 || vcol < 0)
             throw new Exception("雷阵大小不能为负或者超出" + MAX_SIZE + "\n");
@@ -44,12 +45,13 @@ public class Field {
         placeNum();
     }
 
+
     /**
      * 随机放地雷
      */
     private void placeMines() {
         /*col的数组，其中填满从0-row*col的数字，之后使用Fisher-Yates算法打乱，
-        取出mines个数字作为地雷坐标，其坐标为(num/row,num%row)                         */
+        取出mines个数字作为地雷坐标，其坐标为(num/row,num%row)           */
         int size = row * col;
         int[] arr = new int[size];
         for (int i = 0; i < size; i++)
@@ -64,6 +66,32 @@ public class Field {
         }
     }
 
+
+    /**
+     * 随机放地雷，但是(x,y)格点一定不会放
+     */
+    private void placeMines(int x, int y) {
+        int key = x * col + y;
+        int size = row * col - 1;
+        int[] arr = new int[size];
+        for (int i = 0, j = 0; i < size; i++, j++) {
+            if (j == key) {
+                i--;
+                continue;
+            }
+            arr[i] = j;
+        }
+        Random random = new Random();
+        for (int i = size - 1; i >= size - mines; i--) {
+            int index = random.nextInt(i + 1);
+            int temp = arr[index];
+            arr[index] = arr[i];
+            arr[i] = temp;
+            field[arr[i] / col][arr[i] % col] = -1;
+        }
+    }
+
+
     /**
      * 根据地雷设置数字
      */
@@ -74,6 +102,7 @@ public class Field {
             }
         }
     }
+
 
     /**
      * 数周围八个格子的地雷数量
@@ -106,7 +135,7 @@ public class Field {
                 if (isShow[i][j]) {
                     if (readField(i, j) != -1) System.out.print(readField(i, j) + "\t");
                     else System.out.print("*\t");
-                } else if (isFlag(i, j)) System.out.print("▲   ");
+                } else if (isFlag(i, j)) System.out.print("△   ");
                 else System.out.print("■\t");
             }
             System.out.print("\n");
@@ -114,6 +143,7 @@ public class Field {
         System.out.println("Flags:" + flags + "   MinesFound:" + minesFound);
         //System.out.println(this);
     }
+
 
     /**
      * 打印完全展示的雷区
@@ -127,11 +157,13 @@ public class Field {
             System.out.print(i + "\t");
             for (int j = 0; j < col; j++) {
                 if (isMine(i, j) || readField(i, j) == 9) System.out.print("*\t");
-                else System.out.print(readField(i, j) > 8 ? (readField(i, j) - 10) : readField(i, j) + "\t");
+                else
+                    System.out.print((readField(i, j) > 8 ? (readField(i, j) - 10) : readField(i, j)) + "\t");
             }
             System.out.print("\n");
         }
     }
+
 
     /**
      * 读取某个位置的数值，并进行边界判断
@@ -143,9 +175,16 @@ public class Field {
             return field[x][y];
     }
 
+
     public boolean isMine(int x, int y) {
         return readField(x, y) == -1;
     }
+
+
+    public boolean isFlag(int x, int y) {
+        return (readField(x, y) > 8);
+    }
+
 
     /**
      * 若挖到雷，返回false
@@ -156,10 +195,8 @@ public class Field {
         if (isShow[x][y] || isFlag(x, y))
             throw new Exception("不能挖掘已被挖掘或者被标记的格点\n");
 
-        if (!hasDugOnce&& !isFlag(x, y)) {
-            while (isMine(x, y)) {
-                refresh();
-            }
+        if (!hasDugOnce && !isFlag(x, y)) {
+            refresh(x, y);
             hasDugOnce = true;
         }
         if (isMine(x, y)) {
@@ -170,6 +207,7 @@ public class Field {
             return true;
         }
     }
+
 
     /**
      * 插旗子标记地雷
@@ -199,6 +237,7 @@ public class Field {
 
     }
 
+
     /**
      * 将周围空白的格点展开
      */
@@ -217,24 +256,21 @@ public class Field {
         }
     }
 
-    public boolean isFlag(int x, int y) {
-        return (readField(x, y) > 8);
-    }
 
     /**
-     * 依据现有的雷阵大小和地雷数量刷新地雷位置
+     * 依据现有的雷阵大小和地雷数量刷新地雷位置，并且将x,y不设置为雷
      */
-    public void refresh() {
-        boolean [][] flagPos  = new boolean [row][col];
+    public void refresh(int x, int y) {
+        boolean[][] flagPos = new boolean[row][col];
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
-                if(isFlag(i,j)) flagPos[i][j] = true;
+                if (isFlag(i, j)) flagPos[i][j] = true;
                 field[i][j] = 0;
             }
         }
         minesFound = 0;
         flags = 0;
-        placeMines();
+        placeMines(x, y);
         placeNum();
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
@@ -248,6 +284,9 @@ public class Field {
     }
 
 
+    /**
+     * 判断游戏是否胜利
+     */
     public boolean isWin() {
         return (blocksLeft == 0 || minesFound == mines);
     }

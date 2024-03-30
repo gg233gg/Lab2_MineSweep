@@ -25,6 +25,7 @@ public class Game {
         this.scanner = scanner;
     }
 
+
     private int[] commandInit(String command) {
         int[] arg = new int[3];
         String[] num = command.split("\\s");
@@ -33,6 +34,7 @@ public class Game {
         return arg;
     }
 
+
     private int[] commandDig(String command) {
         int[] arg = new int[2];
         String[] num = command.split("\\s");
@@ -40,6 +42,7 @@ public class Game {
             arg[i] = Integer.parseInt(num[i]);
         return arg;
     }
+
 
     private int[] commandFlag(String command) {
         command = command.substring(1, command.length());
@@ -50,15 +53,17 @@ public class Game {
         return arg;
     }
 
+
     /**
      * 不打印纯英文的错误信息
      */
     private void myPrintError(String str) {
-        if(str.matches("^[a-zA-Z0-9\\s]*"))
+        if (str.matches("^[a-zA-Z0-9\\s\":]*"))
             System.out.println("未知命令");
         else
             System.out.println(str);
     }
+
 
     public void play() {
         while (isRunning) {
